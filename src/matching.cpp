@@ -42,7 +42,7 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, const s
         auto op_type = e->op_type;
         size_t min = 0;
         size_t max = 0;
-        if (op_type == OpType::ONE) {
+        if (op_type == OpType::ONE || op_type == OpType::NONE) {
             min = 1;
             max = 1;
         }
