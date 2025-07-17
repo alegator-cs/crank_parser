@@ -167,6 +167,7 @@ void match_down(std::vector<Expr*> exprs, const size_t N, const std::string_view
     for (auto* e : exprs) {
         for (size_t i = 0, imax = e->children.size(); i < imax; i++) {
             auto* ch = e->children[i].get();
+            if (!ch->active) continue;
             prev_alt = alt;
             alt = (ch->link_type == LinkType::ALTERNATION);
             bool cat = !(alt || prev_alt);
