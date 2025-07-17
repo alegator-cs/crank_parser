@@ -70,7 +70,7 @@ std::string_view scan_ref(std::string_view input, GroupType& type, size_t ref_id
     auto num = scan_number(input.substr(1));
     size_t n;
     std::from_chars(num.data(), num.data() + num.size(), n);
-    if (n < ref_id) {
+    if (n > ref_id) {
         type = GroupType::INVALID_REF_ID;
         return "";
     }

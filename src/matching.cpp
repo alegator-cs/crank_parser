@@ -1,8 +1,10 @@
 #include "matching.hpp"
+#include "parse.hpp"
 #include <algorithm>
 #include <utility>
 #include <numeric>
 #include <string_view>
+#include <charconv>
 
 template <typename T>
 std::vector<T> vec_cat(const std::vector<T>& v1, const std::vector<T>& v2) {
@@ -11,7 +13,7 @@ std::vector<T> vec_cat(const std::vector<T>& v1, const std::vector<T>& v2) {
     return combined;
 }
 
-void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, const size_t N, const std::string_view input, std::vector<size_t> match, std::vector<std::vector<size_t>>& matches) {
+void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::vector<Expr*>& groups, const size_t N, const std::string_view input, std::vector<size_t> match, std::vector<std::vector<size_t>>& matches) {
     size_t g = 0;
     size_t s = 0;
     for (size_t i = 0, max = exprs.size(); i < max; i++) {
@@ -127,7 +129,7 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, const s
                     auto op_type = e->op_type;
                     if (op_type != OpType::ONE) m.push_back(current[i]);
                 }
-                match_up(std::move(collapsed), N, input, m, matches);
+                match_up(std::move(collapsed), groups, N, input, m, matches);
             } else if (std::get<std::string>(collapsed[0]) == input) {
                 matches.push_back(std::move(match));
             }
@@ -142,7 +144,7 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, const s
     product(0, {});
 }
 
-void match_down(std::vector<Expr*> exprs, const size_t N, const std::string_view input, std::vector<std::vector<size_t>>& matches) {
+void match_down(std::vector<Expr*> exprs, std::vector<Expr*>& groups, const size_t N, const std::string_view input, std::vector<std::vector<size_t>>& matches) {
     bool all_leaf = std::all_of(exprs.begin(), exprs.end(), [](Expr* e) {
         return e->children.empty();
     });
@@ -154,10 +156,19 @@ void match_down(std::vector<Expr*> exprs, const size_t N, const std::string_view
                 any_active = true;
                 size_t div = e->group.size();
                 std::string leaf = std::string{e->group};
+                if (leaf.size() > 1 && std::isdigit(leaf[1])) {
+                    auto num = scan_number(leaf.substr(1));
+                    size_t n;
+                    std::from_chars(num.data(), num.data() + num.size(), n);
+                    size_t group_idx = n - 1;
+                    e = groups[group_idx];
+                    div = e->group.size();
+                    leaf = std::string{e->group};
+                }
                 exprs_up.push_back({e, div, leaf});
             }
         }
-        if (any_active) match_up(exprs_up, N, input, {}, matches);
+        if (any_active) match_up(exprs_up, groups, N, input, {}, matches);
         return;
     }
     std::vector<std::vector<Expr*>> expansions;
@@ -187,7 +198,7 @@ void match_down(std::vector<Expr*> exprs, const size_t N, const std::string_view
     }
     std::function<void(size_t depth, std::vector<Expr*> current)> product = [&](size_t depth, std::vector<Expr*> current) {
         if (depth == expansions.size()) {
-            match_down(current, N, input, matches);
+            match_down(current, groups, N, input, matches);
             return;
         }
         for (auto* choice : expansions[depth]) {
@@ -302,6 +313,7 @@ void optimize_parse_tree(Expr& expr, std::string_view input) {
     std::vector<Expr*> leaves;
     get_leaves(expr, leaves);
     for (auto* leaf : leaves) {
+        if (leaf->group.size() > 1 && std::isdigit(leaf->group[1])) continue;
         bool matched = false;
         for (size_t i = 0; i < input.size(); ++i) {
             if (match_leaf(leaf->group, input, i)) {
@@ -340,3 +352,10 @@ void propagate_inactives(Expr& expr) {
     expr.active = expr.active && active;
 }
 
+void get_groups(Expr& expr, std::vector<Expr*>& groups) {
+    if (expr.ref_id > 0) groups.push_back(&expr);
+    for (size_t i = 0, imax = expr.children.size(); i < imax; i++) {
+        auto* ch = expr.children[i].get();
+        get_groups(*ch, groups);
+    }
+}

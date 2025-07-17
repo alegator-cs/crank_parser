@@ -264,7 +264,9 @@ int main() {
     print_expr(*expr);
 
     std::vector<std::vector<size_t>> matches;
-    match_down({expr.get()}, input.size(), input, matches);
+    std::vector<Expr*> groups;
+    get_groups(*expr, groups);
+    match_down({expr.get()}, groups, input.size(), input, matches);
     for (size_t i = 0, imax = matches.size(); i < imax; i++) {
         std::cout << "match: ";
         for (size_t j = 0, jmax = matches[i].size(); j < jmax; j++) {
