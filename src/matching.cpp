@@ -148,12 +148,16 @@ void match_down(std::vector<Expr*> exprs, const size_t N, const std::string_view
     });
     if (all_leaf) {
         std::vector<std::tuple<Expr*, size_t, std::string>> exprs_up;
+        bool any_active = false;
         for (auto* e : exprs) {
-            size_t div = e->group.size();
-            std::string leaf = std::string{e->group};
-            exprs_up.push_back({e, div, leaf});
+            if (e->active) {
+                any_active = true;
+                size_t div = e->group.size();
+                std::string leaf = std::string{e->group};
+                exprs_up.push_back({e, div, leaf});
+            }
         }
-        match_up(exprs_up, N, input, {}, matches);
+        if (any_active) match_up(exprs_up, N, input, {}, matches);
         return;
     }
     std::vector<std::vector<Expr*>> expansions;
