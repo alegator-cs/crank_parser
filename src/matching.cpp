@@ -6,9 +6,9 @@
 
 template <typename T>
 std::vector<T> vec_cat(const std::vector<T>& v1, const std::vector<T>& v2) {
-    std::vector<T> combined_vector = v1;
-    combined_vector.insert(combined_vector.end(), v2.begin(), v2.end());
-    return combined_vector;
+    std::vector<T> combined = v1;
+    combined.insert(combined.end(), v2.begin(), v2.end());
+    return combined;
 }
 
 void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, const size_t N, const std::string_view input, std::vector<size_t> match, std::vector<std::vector<size_t>>& matches) {
