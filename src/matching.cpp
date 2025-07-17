@@ -127,7 +127,7 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::ve
                 for (size_t i = 0, imax = current.size(); i < imax; i++) {
                     auto* e = std::get<Expr*>(exprs[i]);
                     auto op_type = e->op_type;
-                    if (op_type != OpType::ONE) m.push_back(current[i]);
+                    if (op_type != OpType::ONE && op_type != OpType::NONE) m.push_back(current[i]);
                 }
                 match_up(std::move(collapsed), groups, N, input, m, matches);
             } else if (std::get<std::string>(collapsed[0]) == input) {
