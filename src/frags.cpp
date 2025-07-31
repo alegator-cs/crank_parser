@@ -6,12 +6,10 @@
 #include <sstream>
 #include <iostream>
 
-// Check if token is a bvar, e.g. "{b0}"
 bool is_bvar(const std::string& s) {
     return s.find("{b") != std::string::npos;
 }
 
-// Check if token is a numeric constant like "1", "42"
 bool is_constant(const std::string& s) {
     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
 }
@@ -41,11 +39,9 @@ std::string to_beq(std::string_view x_frag) {
     if (!result.empty()) {
         result.erase(result.size() - 1, 1);
     }
-
     return result;
 }
 
-// Post-order collection of bvar constraints
 void collect_b_eqs(const Expr& expr, std::vector<std::string>& b_eqs, bool is_root = false) {
     for (const auto& ch : expr.children) {
         collect_b_eqs(*ch, b_eqs, false);
@@ -57,21 +53,14 @@ void collect_b_eqs(const Expr& expr, std::vector<std::string>& b_eqs, bool is_ro
     }
 }
 
-// Returns the single semicolon-separated equation string
 std::string gen_eqs(const Expr& expr, size_t input_size) {
     std::stringstream ss;
-
-    // First constraint: x_frag = input length
     ss << expr.x_frag << "=" << input_size;
-
-    // Then collect bvar constraints
     std::vector<std::string> b_eqs;
     collect_b_eqs(expr, b_eqs, true);
-
     for (const auto& beq : b_eqs) {
         ss << ";" << beq;
     }
-
     return ss.str();
 }
 
@@ -110,35 +99,6 @@ std::string n_m_to_xvar(size_t n, size_t m, size_t xvar_count) {
     }
     return "{x" + count + ":" + nt + "," + mt + "}";
 }
-
-/*
-std::vector<std::vector<Expr*>> get_groups(Expr& expr) {
-    std::vector<std::vector<Expr*>> groups;
-    groups[0].push_back({&expr});
-    size_t level = 0;
-    bool group_nonempty = true;
-    while (group_nonempty) {
-        group_nonempty = false;
-        size_t imax = groups[level].size();
-        for (size_t i = 0; i < imax; i++) {
-            Expr& expr = groups[level][i];
-            size_t jmax = expr.children.size();
-            group_nonempty |= (jmax > 0);
-            for (size_t j = 0; j < jmax; j++) {
-                auto* ch = expr.children[j].get();
-                if (
-                group.push_back(ch);
-            }
-        }
-        level++;
-    }
-}
-
-void match(Expr& expr) {
-    std::vector<std::vector<Expr*>> level_groups;
-
-}
-*/
 
 void gen_frags(Expr& expr, size_t& xvar_count, size_t& bvar_count) {
     if (expr.children.empty()) {
