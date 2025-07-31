@@ -205,10 +205,11 @@ std::unique_ptr<Expr> parse(std::string_view input, size_t& ref_id) {
     if (group_type == GroupType::CAPTURE) ref_id++;
 
     if (!wrapped && scan.size() == input.size()) {
-        size_t div = scan.size();
-        return std::make_unique<Expr>(group_type, OpType::NONE, LinkType::NONE, input, empty_op, empty_link, no_ref_id, zero_idx, div);
+        return std::make_unique<Expr>(group_type, OpType::NONE, LinkType::NONE, input, empty_op, empty_link, no_ref_id, zero_idx);
     } else if (wrapped && scan.size() + op.size() == input.size()) {
         root = std::make_unique<Expr>(group_type, op_type, LinkType::NONE, scan, op, empty_link, local_ref_id);
+        op = ""sv;
+        op_type = OpType::NONE;
         set_range(*root);
     } else {
         root = std::make_unique<Expr>(GroupType::IMPLICIT, OpType::ONE, LinkType::NONE, input, empty_op, empty_link, no_ref_id);
