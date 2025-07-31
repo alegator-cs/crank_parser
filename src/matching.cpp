@@ -13,7 +13,7 @@ std::vector<T> vec_cat(const std::vector<T>& v1, const std::vector<T>& v2) {
     return combined;
 }
 
-void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::vector<Expr*>& groups, const size_t N, const std::string_view input, std::vector<size_t> match, std::vector<std::vector<size_t>>& matches) {
+void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::vector<Expr*>& refs, const size_t N, const std::string_view input, std::vector<size_t> match, std::vector<std::vector<size_t>>& matches) {
     size_t g = 0;
     size_t s = 0;
     for (size_t i = 0, max = exprs.size(); i < max; i++) {
@@ -129,7 +129,7 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::ve
                     auto op_type = e->op_type;
                     if (op_type != OpType::ONE && op_type != OpType::NONE) m.push_back(current[i]);
                 }
-                match_up(std::move(collapsed), groups, N, input, m, matches);
+                match_up(std::move(collapsed), refs, N, input, m, matches);
             } else if (std::get<std::string>(collapsed[0]) == input) {
                 matches.push_back(std::move(match));
             }
@@ -144,11 +144,11 @@ void match_up(std::vector<std::tuple<Expr*, size_t, std::string>> exprs, std::ve
     product(0, {});
 }
 
-void match_down(std::vector<Expr*> exprs, std::vector<Expr*>& groups, const size_t N, const std::string_view input, std::vector<std::vector<size_t>>& matches) {
-    bool all_leaf = std::all_of(exprs.begin(), exprs.end(), [](Expr* e) {
-        return e->children.empty();
+void match_down(std::vector<Expr*> exprs, std::vector<Expr*>& refs, const size_t N, const std::string_view input, std::vector<std::vector<size_t>>& matches) {
+    bool all_leaf_non_ref = std::all_of(exprs.begin(), exprs.end(), [](Expr* e) {
+        return e->ref_id == 0 && e->children.empty();
     });
-    if (all_leaf) {
+    if (all_leaf_non_ref) {
         std::vector<std::tuple<Expr*, size_t, std::string>> exprs_up;
         bool any_active = false;
         for (auto* e : exprs) {
@@ -168,7 +168,7 @@ void match_down(std::vector<Expr*> exprs, std::vector<Expr*>& groups, const size
                 exprs_up.push_back({e, div, leaf});
             }
         }
-        if (any_active) match_up(exprs_up, groups, N, input, {}, matches);
+        if (any_active) match_up(exprs_up, refs, N, input, {}, matches);
         return;
     }
     std::vector<std::vector<Expr*>> expansions;
@@ -198,7 +198,7 @@ void match_down(std::vector<Expr*> exprs, std::vector<Expr*>& groups, const size
     }
     std::function<void(size_t depth, std::vector<Expr*> current)> product = [&](size_t depth, std::vector<Expr*> current) {
         if (depth == expansions.size()) {
-            match_down(current, groups, N, input, matches);
+            match_down(current, refs, N, input, matches);
             return;
         }
         for (auto* choice : expansions[depth]) {
@@ -352,10 +352,10 @@ void propagate_inactives(Expr& expr) {
     expr.active = expr.active && active;
 }
 
-void get_groups(Expr& expr, std::vector<Expr*>& groups) {
-    if (expr.ref_id > 0) groups.push_back(&expr);
+void get_refs(Expr& expr, std::vector<Expr*>& refs) {
+    if (expr.ref_id > 0) refs.push_back(&expr);
     for (size_t i = 0, imax = expr.children.size(); i < imax; i++) {
         auto* ch = expr.children[i].get();
-        get_groups(*ch, groups);
+        get_refs(*ch, refs);
     }
 }
