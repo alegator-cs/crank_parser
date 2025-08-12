@@ -208,13 +208,17 @@ std::unique_ptr<Expr> parse(std::string_view input, size_t& ref_id) {
         return std::make_unique<Expr>(group_type, OpType::NONE, LinkType::NONE, input, empty_op, empty_link, no_ref_id, zero_idx);
     } else if (wrapped && scan.size() + op.size() == input.size()) {
         root = std::make_unique<Expr>(group_type, op_type, LinkType::NONE, scan, op, empty_link, local_ref_id);
-        op = ""sv;
-        op_type = OpType::NONE;
         set_range(*root);
+        auto unwrap = unwrap_group(scan);
+        scan = scan_group(unwrap, group_type, ref_id);
+        rest = unwrap.substr(scan.size());
+        op = scan_op(rest, op_type);
+        link = scan_link(rest.substr(op.size()), link_type);
+        wrapped = false;
     } else {
         root = std::make_unique<Expr>(GroupType::IMPLICIT, OpType::ONE, LinkType::NONE, input, empty_op, empty_link, no_ref_id);
     }
-    
+
     size_t idx = 0;
     while (!scan.empty()) {
         auto maybe_unwrap = !wrapped ? scan : unwrap_group(scan);
